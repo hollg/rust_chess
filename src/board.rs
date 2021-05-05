@@ -1,8 +1,14 @@
 use bevy::prelude::*;
 use bevy_mod_picking::*;
 
+use crate::pieces::*;
+
 #[derive(Default)]
 struct SelectedSquare {
+    entity: Option<Entity>,
+}
+#[derive(Default)]
+struct SelectedPiece {
     entity: Option<Entity>,
 }
 
@@ -10,9 +16,20 @@ pub struct BoardPlugin;
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<SelectedSquare>()
+            .init_resource::<SelectedPiece>()
             .add_startup_system(create_board.system())
             // .add_system_to_stage(CoreStage::PostUpdate, print_events.system())
-            .add_system_to_stage(CoreStage::PostUpdate, select_square.system());
+            .add_system_to_stage(
+                CoreStage::PostUpdate,
+                select_square
+                    .system()
+                    .label("select_square")
+                    .after(PickingSystem::Selection),
+            )
+            .add_system_to_stage(
+                CoreStage::PostUpdate,
+                select_piece.system().after("select_square"),
+            );
     }
 }
 pub enum SquareColor {
@@ -25,7 +42,7 @@ pub struct Square {
     pub color: SquareColor,
 }
 
-pub fn create_board(
+fn create_board(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -61,19 +78,73 @@ pub fn create_board(
     }
 }
 
-pub fn print_events(mut events: EventReader<PickingEvent>) {
-    for event in events.iter() {
-        info!("{:?}", event);
+fn select_square(
+    mut selected_square: ResMut<SelectedSquare>,
+    mut selected_piece: ResMut<SelectedPiece>,
+    mouse_button_inputs: Res<Input<MouseButton>>,
+    squares_query: Query<(Entity, &Selection, &Square)>,
+    mut pieces_query: Query<(Entity, &mut Piece)>,
+) {
+    // Only run if the left button is pressed
+    if !mouse_button_inputs.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    // Populate selected_square resource with the newly selected square
+    if let Some((square_entity, _selection, square)) = squares_query
+        .iter()
+        .find(|(_square_entity, selection, _square)| selection.selected())
+    {
+        selected_square.entity = Some(square_entity);
+
+        // If there is already a selected piece, move it to the selected square
+        // TODO: figure out why the move only happens after 1 more click
+        if let Some(selected_piece_entity) = selected_piece.entity {
+            println!("There is a selected piece");
+            if let Ok((_piece_entity, mut piece)) = pieces_query.get_mut(selected_piece_entity) {
+                println!("About to move the piece");
+                piece.x = square.x;
+                piece.y = square.y;
+            }
+
+            // Then deselect everything
+            selected_square.entity = None;
+            selected_piece.entity = None;
+        }
+    } else {
+        // Player clicked outside the board, deselect everything
+        selected_square.entity = None;
+        selected_piece.entity = None;
     }
 }
 
-fn select_square(
-    mut selected_square: ResMut<SelectedSquare>,
-    mut query: Query<(Entity, &mut PickableBundle)>,
+fn select_piece(
+    selected_square: Res<SelectedSquare>,
+    mut selected_piece: ResMut<SelectedPiece>,
+    squares_query: Query<(Entity, &Square)>,
+    pieces_query: Query<(Entity, &Piece)>,
 ) {
-    for (entity, bundle) in query.iter_mut() {
-        if bundle.selection.selected() {
-            selected_square.entity = Some(entity);
+    if !selected_square.is_changed() {
+        return;
+    }
+
+    if selected_piece.entity.is_some() {
+        return;
+    }
+
+    match selected_square.entity {
+        None => return,
+        Some(selected_square_entity) => {
+            if let Ok((_square_entity, square)) = squares_query.get(selected_square_entity) {
+                // Select the piece in the currently selected square
+                if let Some((piece_entity, _piece)) = pieces_query
+                    .iter()
+                    .find(|(_piece_entity, piece)| piece.x == square.x && piece.y == square.y)
+                {
+                    // piece_entity is now the entity in the same square
+                    selected_piece.entity = Some(piece_entity);
+                }
+            }
         }
     }
 }

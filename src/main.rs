@@ -3,7 +3,7 @@ mod board;
 use board::BoardPlugin;
 
 mod pieces;
-use pieces::create_pieces;
+use pieces::PiecesPlugin;
 
 use bevy_mod_picking::*;
 
@@ -12,18 +12,19 @@ fn main() {
         .insert_resource(Msaa { samples: 4 })
         .insert_resource(WindowDescriptor {
             title: "Chess!".to_string(),
-            width: 1600.,
-            height: 1600.,
+            width: 700.,
+            height: 700.,
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(PickingPlugin)
         .add_plugin(DebugCursorPickingPlugin)
+        .add_plugin(DebugEventsPickingPlugin)
         .add_plugin(InteractablePickingPlugin)
         .add_plugin(HighlightablePickingPlugin)
         .add_plugin(BoardPlugin)
+        .add_plugin(PiecesPlugin)
         .add_startup_system(setup.system())
-        .add_startup_system(create_pieces.system())
         .run();
 }
 

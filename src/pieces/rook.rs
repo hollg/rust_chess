@@ -1,14 +1,16 @@
 use bevy::prelude::*;
 
-use super::{Piece, PieceColor, PieceType};
+use super::{is_path_empty, Piece, PieceColor, PieceType};
 
 pub fn spawn_rook(
     commands: &mut Commands,
     material: Handle<StandardMaterial>,
     piece_color: PieceColor,
-    mesh: Handle<Mesh>,
     position: (u8, u8),
+    asset_server: &AssetServer,
 ) {
+    let mesh: Handle<Mesh> = asset_server.load("models/chess_kit/pieces.glb#Mesh5/Primitive0");
+
     commands
         // Spawn parent entity
         .spawn_bundle(PbrBundle {
@@ -37,4 +39,17 @@ pub fn spawn_rook(
                 ..Default::default()
             });
         });
+}
+
+pub fn is_rook_move_valid(
+    current_position: (u8, u8),
+    target_position: (u8, u8),
+    pieces: &Vec<Piece>,
+) -> bool {
+    let (current_x, current_y) = current_position;
+    let (target_x, target_y) = target_position;
+
+    is_path_empty((current_x, current_y), target_position, pieces)
+        && ((current_x == target_x && current_y != target_y)
+            || (current_y == target_y && current_x != target_x))
 }

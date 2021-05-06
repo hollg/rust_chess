@@ -52,3 +52,17 @@ pub fn spawn_king(
             });
         });
 }
+
+pub fn is_king_move_valid(current_position: (u8, u8), target_position: (u8, u8)) -> bool {
+    let (current_x, current_y) = current_position;
+    let (target_x, target_y) = target_position;
+
+    return ((current_x as i8 - target_x as i8).abs() == 1
+                    && (current_y == target_y))
+                // Vertical
+                || ((current_y as i8 - target_y as i8).abs() == 1
+                    && (current_x == target_x))
+                // Diagonal
+                || ((current_x as i8 - target_x as i8).abs() == 1
+                    && (current_y as i8 - target_y as i8).abs() == 1);
+}

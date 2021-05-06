@@ -6,10 +6,12 @@ pub fn spawn_knight(
     commands: &mut Commands,
     material: Handle<StandardMaterial>,
     piece_color: PieceColor,
-    mesh_1: Handle<Mesh>,
-    mesh_2: Handle<Mesh>,
     position: (u8, u8),
+    asset_server: &AssetServer,
 ) {
+    let mesh_1: Handle<Mesh> = asset_server.load("models/chess_kit/pieces.glb#Mesh3/Primitive0");
+    let mesh_2: Handle<Mesh> = asset_server.load("models/chess_kit/pieces.glb#Mesh4/Primitive0");
+
     commands
         // Spawn parent entity
         .spawn_bundle(PbrBundle {
@@ -49,4 +51,13 @@ pub fn spawn_knight(
                 ..Default::default()
             });
         });
+}
+
+pub fn is_knight_move_valid(current_position: (u8, u8), target_position: (u8, u8)) -> bool {
+    let (current_x, current_y) = current_position;
+    let (target_x, target_y) = target_position;
+
+    ((current_x as i8 - target_x as i8).abs() == 2 && (current_y as i8 - target_y as i8).abs() == 1)
+        || ((current_x as i8 - target_x as i8).abs() == 1
+            && (current_y as i8 - target_y as i8).abs() == 2)
 }

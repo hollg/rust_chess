@@ -1,14 +1,16 @@
 use bevy::prelude::*;
 
-use super::{Piece, PieceColor, PieceType};
+use super::{color_of_square, is_path_empty, Piece, PieceColor, PieceType};
 
 pub fn spawn_pawn(
     commands: &mut Commands,
     material: Handle<StandardMaterial>,
     piece_color: PieceColor,
-    mesh: Handle<Mesh>,
     position: (u8, u8),
+    asset_server: &AssetServer,
 ) {
+    let mesh: Handle<Mesh> = asset_server.load("models/chess_kit/pieces.glb#Mesh2/Primitive0");
+
     commands
         .spawn_bundle(PbrBundle {
             transform: Transform::from_translation(Vec3::new(
@@ -36,4 +38,75 @@ pub fn spawn_pawn(
                 ..Default::default()
             });
         });
+}
+
+pub fn is_white_pawn_move_valid(
+    current_position: (u8, u8),
+    target_position: (u8, u8),
+    pieces: &Vec<Piece>,
+) -> bool {
+    let (current_x, current_y) = current_position;
+    let (target_x, target_y) = target_position;
+
+    // Normal move
+    if target_x as i8 - current_x as i8 == 1 && (current_y == target_y) {
+        if color_of_square(target_position, &pieces).is_none() {
+            return true;
+        }
+    }
+
+    // Move 2 squares
+    if current_x == 1
+        && target_x as i8 - current_x as i8 == 2
+        && (current_y == target_y)
+        && is_path_empty((current_x, current_y), target_position, &pieces)
+    {
+        if color_of_square(target_position, &pieces).is_none() {
+            return true;
+        }
+    }
+
+    // Take piece
+    if target_x as i8 - current_x as i8 == 1 && (current_y as i8 - target_y as i8).abs() == 1 {
+        if color_of_square(target_position, &pieces) == Some(PieceColor::Black) {
+            return true;
+        }
+    }
+
+    false
+}
+
+pub fn is_black_pawn_move_valid(
+    current_position: (u8, u8),
+    target_position: (u8, u8),
+    pieces: &Vec<Piece>,
+) -> bool {
+    let (current_x, current_y) = current_position;
+    let (target_x, target_y) = target_position;
+
+    // Normal move
+    if target_x as i8 - current_x as i8 == -1 && (current_y == target_y) {
+        if color_of_square(target_position, &pieces).is_none() {
+            return true;
+        }
+    }
+
+    // Move 2 squares
+    if current_x == 6
+        && target_x as i8 - current_x as i8 == -2
+        && (current_y == target_y)
+        && is_path_empty((current_x, current_y), target_position, &pieces)
+    {
+        if color_of_square(target_position, &pieces).is_none() {
+            return true;
+        }
+    }
+
+    // Take piece
+    if target_x as i8 - current_x as i8 == -1 && (current_y as i8 - target_y as i8).abs() == 1 {
+        if color_of_square(target_position, &pieces) == Some(PieceColor::White) {
+            return true;
+        }
+    }
+    false
 }

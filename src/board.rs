@@ -40,6 +40,7 @@ impl Plugin for BoardPlugin {
             .init_resource::<PlayerTurn>()
             .add_event::<ResetSelectedEvent>()
             .add_startup_system(create_board.system())
+            .add_system(color_squares.system())
             // .add_system_to_stage(CoreStage::PostUpdate, print_events.system())
             .add_system_to_stage(
                 CoreStage::PostUpdate,
@@ -50,14 +51,17 @@ impl Plugin for BoardPlugin {
             )
             .add_system_to_stage(
                 CoreStage::PostUpdate,
-                select_piece.system().after("select_square"),
-            )
-            .add_system_to_stage(
-                CoreStage::PostUpdate,
                 move_piece
                     .system()
                     .label("move_piece")
                     .after("select_square"),
+            )
+            .add_system_to_stage(
+                CoreStage::PostUpdate,
+                select_piece
+                    .system()
+                    .label("select_piece")
+                    .after("move_piece"),
             )
             .add_system_to_stage(
                 CoreStage::PostUpdate,
@@ -75,6 +79,7 @@ impl Plugin for BoardPlugin {
             );
     }
 }
+#[derive(PartialEq)]
 pub enum SquareColor {
     Dark,
     Light,
@@ -96,9 +101,9 @@ fn create_board(
     // let dark_material = materials.add(Color::rgb(0., 0.1, 0.1).into());
 
     // Spawn 64 squares
-    for i in 0..8 {
-        for j in 0..8 {
-            let color = if (i + j + 1) % 2 == 0 {
+    for x in 0..8 {
+        for y in 0..8 {
+            let color = if (x + y + 1) % 2 == 0 {
                 SquareColor::Light
             } else {
                 SquareColor::Dark
@@ -112,11 +117,11 @@ fn create_board(
                         SquareColor::Dark => materials.add(Color::rgb(0., 0.1, 0.1).into()),
                         SquareColor::Light => materials.add(Color::rgb(1., 0.9, 0.9).into()),
                     },
-                    transform: Transform::from_translation(Vec3::new(i as f32, 0., j as f32)),
+                    transform: Transform::from_translation(Vec3::new(x as f32, 0., y as f32)),
                     ..Default::default()
                 })
                 .insert_bundle(PickableBundle::default())
-                .insert(Square { x: i, y: j, color });
+                .insert(Square { x, y, color });
         }
     }
 }
@@ -171,6 +176,7 @@ fn select_piece(
                     })
                 {
                     // piece_entity is now the entity in the same square
+                    println!("Selected piece");
                     selected_piece.entity = Some(piece_entity);
                 }
             }
@@ -186,6 +192,7 @@ fn reset_selected(
     mut selected_piece: ResMut<SelectedPiece>,
 ) {
     for _event in event_reader.iter() {
+        println!("Resetting selected square and piece");
         selected_square.entity = None;
         selected_piece.entity = None;
     }
@@ -203,8 +210,6 @@ fn move_piece(
     if !selected_square.is_changed() {
         return;
     }
-
-    println!("Running move piece");
 
     let square_entity = if let Some(entity) = selected_square.entity {
         entity
@@ -244,6 +249,7 @@ fn move_piece(
                 }
             }
 
+            println!("Moving piece");
             // Move piece
             piece.x = square.x;
             piece.y = square.y;
@@ -251,6 +257,7 @@ fn move_piece(
             // Change turn
             turn.toggle();
         }
+        println!("move wasn't valid");
 
         reset_selected_event.send(ResetSelectedEvent);
     }
@@ -276,5 +283,33 @@ fn despawn_taken_pieces(
 
         // Despawn piece and children
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+fn color_squares(
+    selected_square: Res<SelectedSquare>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    squares_query: Query<(
+        Entity,
+        &Square,
+        &Handle<StandardMaterial>,
+        &Selection,
+        &Hover,
+    )>,
+) {
+    for (entity, square, material_handle, selection, hover) in squares_query.iter() {
+        // Get the actual material
+        let material = materials.get_mut(material_handle).unwrap();
+
+        // Change the material color
+        material.base_color = if hover.hovered() {
+            Color::rgb(0.8, 0.3, 0.3)
+        } else if Some(entity) == selected_square.entity {
+            Color::rgb(0.9, 0.1, 0.1)
+        } else if square.color == SquareColor::Light {
+            Color::rgb(1., 0.9, 0.9)
+        } else {
+            Color::rgb(0., 0.1, 0.1)
+        };
     }
 }

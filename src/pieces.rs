@@ -83,6 +83,7 @@ impl Piece {
                         && (self.y == new_position.1)
                         && is_path_empty((self.x, self.y), new_position, &pieces)
                     {
+                        dbg!("Can move to square");
                         if color_of_square(new_position, &pieces).is_none() {
                             return true;
                         }

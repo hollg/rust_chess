@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+
+use super::{spawn_bishop, spawn_king, spawn_knight, spawn_pawn, spawn_queen, spawn_rook};
 pub struct Taken;
 #[derive(Clone, Copy, PartialEq)]
 pub enum PieceColor {
@@ -83,7 +85,6 @@ impl Piece {
                         && (self.y == new_position.1)
                         && is_path_empty((self.x, self.y), new_position, &pieces)
                     {
-                        dbg!("Can move to square");
                         if color_of_square(new_position, &pieces).is_none() {
                             return true;
                         }
@@ -146,10 +147,7 @@ fn create_pieces(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // Load all the meshes
-    let king_handle: Handle<Mesh> =
-        asset_server.load("models/chess_kit/pieces.glb#Mesh0/Primitive0");
-    let king_cross_handle: Handle<Mesh> =
-        asset_server.load("models/chess_kit/pieces.glb#Mesh1/Primitive0");
+
     let pawn_handle: Handle<Mesh> =
         asset_server.load("models/chess_kit/pieces.glb#Mesh2/Primitive0");
     let knight_1_handle: Handle<Mesh> =
@@ -200,9 +198,8 @@ fn create_pieces(
         &mut commands,
         white_material.clone(),
         PieceColor::White,
-        king_handle.clone(),
-        king_cross_handle.clone(),
         (0, 4),
+        &asset_server,
     );
     spawn_bishop(
         &mut commands,
@@ -270,9 +267,8 @@ fn create_pieces(
         &mut commands,
         black_material.clone(),
         PieceColor::Black,
-        king_handle.clone(),
-        king_cross_handle.clone(),
         (7, 4),
+        &asset_server,
     );
     spawn_bishop(
         &mut commands,
@@ -308,249 +304,6 @@ fn create_pieces(
     }
 }
 
-fn spawn_king(
-    commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    piece_color: PieceColor,
-    mesh: Handle<Mesh>,
-    mesh_cross: Handle<Mesh>,
-    position: (u8, u8),
-) {
-    commands
-        // Spawn parent entity
-        .spawn_bundle(PbrBundle {
-            transform: Transform::from_translation(Vec3::new(
-                position.0 as f32,
-                0.,
-                position.1 as f32,
-            )),
-            ..Default::default()
-        })
-        .insert(Piece {
-            color: piece_color,
-            piece_type: PieceType::King,
-            x: position.0,
-            y: position.1,
-        })
-        // Add children to the parent
-        .with_children(|parent| {
-            parent.spawn_bundle(PbrBundle {
-                mesh,
-                material: material.clone(),
-                transform: {
-                    let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., -1.9));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
-                    transform
-                },
-                ..Default::default()
-            });
-            parent.spawn_bundle(PbrBundle {
-                mesh: mesh_cross,
-                material,
-                transform: {
-                    let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., -1.9));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
-                    transform
-                },
-                ..Default::default()
-            });
-        });
-}
-
-fn spawn_knight(
-    commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    piece_color: PieceColor,
-    mesh_1: Handle<Mesh>,
-    mesh_2: Handle<Mesh>,
-    position: (u8, u8),
-) {
-    commands
-        // Spawn parent entity
-        .spawn_bundle(PbrBundle {
-            transform: Transform::from_translation(Vec3::new(
-                position.0 as f32,
-                0.,
-                position.1 as f32,
-            )),
-            ..Default::default()
-        })
-        .insert(Piece {
-            color: piece_color,
-            piece_type: PieceType::Knight,
-            x: position.0,
-            y: position.1,
-        })
-        // Add children to the parent
-        .with_children(|parent| {
-            parent.spawn_bundle(PbrBundle {
-                mesh: mesh_1,
-                material: material.clone(),
-                transform: {
-                    let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., 0.9));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
-                    transform
-                },
-                ..Default::default()
-            });
-            parent.spawn_bundle(PbrBundle {
-                mesh: mesh_2,
-                material,
-                transform: {
-                    let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., 0.9));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
-                    transform
-                },
-                ..Default::default()
-            });
-        });
-}
-
-fn spawn_queen(
-    commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    piece_color: PieceColor,
-    mesh: Handle<Mesh>,
-    position: (u8, u8),
-) {
-    commands
-        .spawn_bundle(PbrBundle {
-            transform: Transform::from_translation(Vec3::new(
-                position.0 as f32,
-                0.,
-                position.1 as f32,
-            )),
-            ..Default::default()
-        })
-        .insert(Piece {
-            color: piece_color,
-            piece_type: PieceType::Queen,
-            x: position.0,
-            y: position.1,
-        })
-        .with_children(|parent| {
-            parent.spawn_bundle(PbrBundle {
-                mesh,
-                material,
-                transform: {
-                    let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., -0.95));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
-                    transform
-                },
-                ..Default::default()
-            });
-        });
-}
-
-fn spawn_bishop(
-    commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    piece_color: PieceColor,
-    mesh: Handle<Mesh>,
-    position: (u8, u8),
-) {
-    commands
-        .spawn_bundle(PbrBundle {
-            transform: Transform::from_translation(Vec3::new(
-                position.0 as f32,
-                0.,
-                position.1 as f32,
-            )),
-            ..Default::default()
-        })
-        .insert(Piece {
-            color: piece_color,
-            piece_type: PieceType::Bishop,
-            x: position.0,
-            y: position.1,
-        })
-        .with_children(|parent| {
-            parent.spawn_bundle(PbrBundle {
-                mesh,
-                material,
-                transform: {
-                    let mut transform = Transform::from_translation(Vec3::new(-0.1, 0., 0.));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
-                    transform
-                },
-                ..Default::default()
-            });
-        });
-}
-
-fn spawn_rook(
-    commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    piece_color: PieceColor,
-    mesh: Handle<Mesh>,
-    position: (u8, u8),
-) {
-    commands
-        // Spawn parent entity
-        .spawn_bundle(PbrBundle {
-            transform: Transform::from_translation(Vec3::new(
-                position.0 as f32,
-                0.,
-                position.1 as f32,
-            )),
-            ..Default::default()
-        })
-        .insert(Piece {
-            color: piece_color,
-            piece_type: PieceType::Rook,
-            x: position.0,
-            y: position.1,
-        })
-        .with_children(|parent| {
-            parent.spawn_bundle(PbrBundle {
-                mesh,
-                material,
-                transform: {
-                    let mut transform = Transform::from_translation(Vec3::new(-0.1, 0., 1.8));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
-                    transform
-                },
-                ..Default::default()
-            });
-        });
-}
-
-fn spawn_pawn(
-    commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    piece_color: PieceColor,
-    mesh: Handle<Mesh>,
-    position: (u8, u8),
-) {
-    commands
-        .spawn_bundle(PbrBundle {
-            transform: Transform::from_translation(Vec3::new(
-                position.0 as f32,
-                0.,
-                position.1 as f32,
-            )),
-            ..Default::default()
-        })
-        .insert(Piece {
-            color: piece_color,
-            piece_type: PieceType::Pawn,
-            x: position.0,
-            y: position.1,
-        })
-        .with_children(|parent| {
-            parent.spawn_bundle(PbrBundle {
-                mesh,
-                material,
-                transform: {
-                    let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., 2.6));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
-                    transform
-                },
-                ..Default::default()
-            });
-        });
-}
-
 fn move_pieces(time: Res<Time>, mut query: Query<(&mut Transform, &Piece)>) {
     for (mut transform, piece) in query.iter_mut() {
         // Get the direction to move in
@@ -558,6 +311,7 @@ fn move_pieces(time: Res<Time>, mut query: Query<(&mut Transform, &Piece)>) {
 
         // Only move if the piece isn't already there (distance is big)
         if direction.length() > 0.1 {
+            println!("doing move");
             transform.translation += direction.normalize() * time.delta_seconds();
         }
     }

@@ -176,7 +176,6 @@ fn select_piece(
                     })
                 {
                     // piece_entity is now the entity in the same square
-                    println!("Selected piece");
                     selected_piece.entity = Some(piece_entity);
                 }
             }
@@ -192,7 +191,6 @@ fn reset_selected(
     mut selected_piece: ResMut<SelectedPiece>,
 ) {
     for _event in event_reader.iter() {
-        println!("Resetting selected square and piece");
         selected_square.entity = None;
         selected_piece.entity = None;
     }
@@ -249,7 +247,6 @@ fn move_piece(
                 }
             }
 
-            println!("Moving piece");
             // Move piece
             piece.x = square.x;
             piece.y = square.y;
@@ -257,7 +254,6 @@ fn move_piece(
             // Change turn
             turn.toggle();
         }
-        println!("move wasn't valid");
 
         reset_selected_event.send(ResetSelectedEvent);
     }

@@ -8,6 +8,9 @@ use pieces::PiecesPlugin;
 mod ui;
 use ui::UIPlugin;
 
+mod check;
+use check::CheckPlugin;
+
 use bevy_mod_picking::*;
 
 fn main() {
@@ -27,7 +30,8 @@ fn main() {
         .add_plugin(HighlightablePickingPlugin)
         .add_plugin(BoardPlugin)
         .add_plugin(PiecesPlugin)
-        // .add_plugin(UIPlugin)
+        .add_plugin(UIPlugin)
+        .add_plugin(CheckPlugin)
         .add_startup_system(setup.system())
         .run();
 }

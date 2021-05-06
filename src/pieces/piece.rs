@@ -33,7 +33,7 @@ pub struct Piece {
 
 impl Piece {
     /// Returns the possible_positions that are available
-    pub fn is_move_valid(&self, new_position: (u8, u8), pieces: Vec<Piece>) -> bool {
+    pub fn is_move_valid(&self, new_position: (u8, u8), pieces: &Vec<Piece>) -> bool {
         // If there's a piece of the same color in the same square, it can't move
         if color_of_square(new_position, &pieces) == Some(self.color) {
             return false;
@@ -41,16 +41,16 @@ impl Piece {
 
         match self.piece_type {
             PieceType::King => is_king_move_valid((self.x, self.y), new_position),
-            PieceType::Queen => is_queen_move_valid((self.x, self.y), new_position, &pieces),
-            PieceType::Bishop => is_bishop_move_valid((self.x, self.y), new_position, &pieces),
+            PieceType::Queen => is_queen_move_valid((self.x, self.y), new_position, pieces),
+            PieceType::Bishop => is_bishop_move_valid((self.x, self.y), new_position, pieces),
             PieceType::Knight => is_knight_move_valid((self.x, self.y), new_position),
-            PieceType::Rook => is_rook_move_valid((self.x, self.y), new_position, &pieces),
+            PieceType::Rook => is_rook_move_valid((self.x, self.y), new_position, pieces),
             PieceType::Pawn => match self.color {
                 PieceColor::Black => {
-                    is_black_pawn_move_valid((self.x, self.y), new_position, &pieces)
+                    is_black_pawn_move_valid((self.x, self.y), new_position, pieces)
                 }
                 PieceColor::White => {
-                    is_white_pawn_move_valid((self.x, self.y), new_position, &pieces)
+                    is_white_pawn_move_valid((self.x, self.y), new_position, pieces)
                 }
             },
         }

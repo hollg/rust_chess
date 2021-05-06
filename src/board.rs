@@ -235,7 +235,7 @@ fn move_piece(
                 return;
             };
 
-        if piece.is_move_valid((square.x, square.y), pieces_vec) {
+        if piece.is_move_valid((square.x, square.y), &pieces_vec) {
             // Check if a piece of the opposite color exists in this square and despawn it
             for (other_entity, other_piece) in pieces_entity_vec {
                 if other_piece.x == square.x

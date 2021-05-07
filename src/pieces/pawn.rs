@@ -43,14 +43,14 @@ pub fn spawn_pawn(
 pub fn is_white_pawn_move_valid(
     current_position: (u8, u8),
     target_position: (u8, u8),
-    pieces: &Vec<Piece>,
+    pieces: &Query<&Piece>,
 ) -> bool {
     let (current_x, current_y) = current_position;
     let (target_x, target_y) = target_position;
 
     // Normal move
     if target_x as i8 - current_x as i8 == 1 && (current_y == target_y) {
-        if color_of_square(target_position, &pieces).is_none() {
+        if color_of_square(target_position, pieces).is_none() {
             return true;
         }
     }
@@ -59,16 +59,16 @@ pub fn is_white_pawn_move_valid(
     if current_x == 1
         && target_x as i8 - current_x as i8 == 2
         && (current_y == target_y)
-        && is_path_empty((current_x, current_y), target_position, &pieces)
+        && is_path_empty((current_x, current_y), target_position, pieces)
     {
-        if color_of_square(target_position, &pieces).is_none() {
+        if color_of_square(target_position, pieces).is_none() {
             return true;
         }
     }
 
     // Take piece
     if target_x as i8 - current_x as i8 == 1 && (current_y as i8 - target_y as i8).abs() == 1 {
-        if color_of_square(target_position, &pieces) == Some(PieceColor::Black) {
+        if color_of_square(target_position, pieces) == Some(PieceColor::Black) {
             return true;
         }
     }
@@ -79,14 +79,14 @@ pub fn is_white_pawn_move_valid(
 pub fn is_black_pawn_move_valid(
     current_position: (u8, u8),
     target_position: (u8, u8),
-    pieces: &Vec<Piece>,
+    pieces: &Query<&Piece>,
 ) -> bool {
     let (current_x, current_y) = current_position;
     let (target_x, target_y) = target_position;
 
     // Normal move
     if target_x as i8 - current_x as i8 == -1 && (current_y == target_y) {
-        if color_of_square(target_position, &pieces).is_none() {
+        if color_of_square(target_position, pieces).is_none() {
             return true;
         }
     }
@@ -95,16 +95,16 @@ pub fn is_black_pawn_move_valid(
     if current_x == 6
         && target_x as i8 - current_x as i8 == -2
         && (current_y == target_y)
-        && is_path_empty((current_x, current_y), target_position, &pieces)
+        && is_path_empty((current_x, current_y), target_position, pieces)
     {
-        if color_of_square(target_position, &pieces).is_none() {
+        if color_of_square(target_position, pieces).is_none() {
             return true;
         }
     }
 
     // Take piece
     if target_x as i8 - current_x as i8 == -1 && (current_y as i8 - target_y as i8).abs() == 1 {
-        if color_of_square(target_position, &pieces) == Some(PieceColor::White) {
+        if color_of_square(target_position, pieces) == Some(PieceColor::White) {
             return true;
         }
     }

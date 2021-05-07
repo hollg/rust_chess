@@ -44,7 +44,7 @@ pub fn spawn_rook(
 pub fn is_rook_move_valid(
     current_position: (u8, u8),
     target_position: (u8, u8),
-    pieces: &Vec<Piece>,
+    pieces: &Query<&Piece>,
 ) -> bool {
     let (current_x, current_y) = current_position;
     let (target_x, target_y) = target_position;

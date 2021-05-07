@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     board::PlayerTurn,
-    pieces::{Piece, PieceColor, PieceType},
+    pieces::{can_any_piece_reach_king, Piece, PieceType},
 };
 
 struct Check {
@@ -45,11 +45,7 @@ fn check_updater(mut check: ResMut<Check>, turn: Res<PlayerTurn>, pieces_query: 
         .find(|piece| piece.color == turn.0 && piece.piece_type == PieceType::King)
     {
         // are any pieces attacking the king ?
-        if pieces_query
-            .iter()
-            .find(|piece| piece.is_move_valid((king.x, king.y), &pieces))
-            .is_some()
-        {
+        if can_any_piece_reach_king(king, &pieces_query) {
             println!("check!");
             check.is_check = true;
         }

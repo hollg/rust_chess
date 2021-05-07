@@ -43,11 +43,11 @@ pub fn spawn_bishop(
 pub fn is_bishop_move_valid(
     current_position: (u8, u8),
     target_position: (u8, u8),
-    pieces: &Vec<Piece>,
+    pieces: &Query<&Piece>,
 ) -> bool {
     let (current_x, current_y) = current_position;
     let (target_x, target_y) = target_position;
 
-    is_path_empty((current_x, current_y), target_position, &pieces)
+    is_path_empty((current_x, current_y), target_position, pieces)
         && (current_x as i8 - target_x as i8).abs() == (current_y as i8 - target_y as i8).abs()
 }

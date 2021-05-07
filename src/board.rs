@@ -39,6 +39,7 @@ impl Plugin for BoardPlugin {
             .init_resource::<SelectedPiece>()
             .init_resource::<PlayerTurn>()
             .add_event::<ResetSelectedEvent>()
+            .add_event::<MoveEvent>()
             .add_startup_system(create_board.system())
             .add_system(color_squares.system())
             // .add_system_to_stage(CoreStage::PostUpdate, print_events.system())
@@ -51,10 +52,17 @@ impl Plugin for BoardPlugin {
             )
             .add_system_to_stage(
                 CoreStage::PostUpdate,
+                validate_move
+                    .system()
+                    .label("validate_move")
+                    .after("select_square"),
+            )
+            .add_system_to_stage(
+                CoreStage::PostUpdate,
                 move_piece
                     .system()
                     .label("move_piece")
-                    .after("select_square"),
+                    .after("validate_move"),
             )
             .add_system_to_stage(
                 CoreStage::PostUpdate,
@@ -183,6 +191,20 @@ fn select_piece(
     }
 }
 
+struct MoveEvent {
+    piece: Entity,
+    end_position: (u8, u8),
+}
+
+fn move_piece(mut event_reader: EventReader<MoveEvent>, mut pieces: Query<&mut Piece>) {
+    for event in event_reader.iter() {
+        if let Ok(mut piece) = pieces.get_mut(event.piece) {
+            piece.x = event.end_position.0;
+            piece.y = event.end_position.1;
+        }
+    }
+}
+
 struct ResetSelectedEvent;
 
 fn reset_selected(
@@ -196,14 +218,16 @@ fn reset_selected(
     }
 }
 
-fn move_piece(
+fn validate_move(
     mut commands: Commands,
     selected_square: Res<SelectedSquare>,
     selected_piece: Res<SelectedPiece>,
     mut turn: ResMut<PlayerTurn>,
     squares_query: Query<&Square>,
-    mut pieces_query: Query<(Entity, &mut Piece)>,
+    pieces_query: Query<&Piece>,
+    pieces_entity_query: Query<(Entity, &Piece)>,
     mut reset_selected_event: ResMut<Events<ResetSelectedEvent>>,
+    mut move_event: ResMut<Events<MoveEvent>>,
 ) {
     if !selected_square.is_changed() {
         return;
@@ -222,22 +246,16 @@ fn move_piece(
     };
 
     if let Some(selected_piece_entity) = selected_piece.entity {
-        let pieces_vec = pieces_query.iter_mut().map(|(_, piece)| *piece).collect();
-        let pieces_entity_vec = pieces_query
-            .iter_mut()
-            .map(|(entity, piece)| (entity, *piece))
-            .collect::<Vec<(Entity, Piece)>>();
-        // Move the selected piece to the selected square
-        let mut piece =
-            if let Ok((_piece_entity, piece)) = pieces_query.get_mut(selected_piece_entity) {
-                piece
-            } else {
-                return;
-            };
+        // find the selected piece
+        let piece = if let Ok(piece) = pieces_query.get(selected_piece_entity) {
+            piece
+        } else {
+            return;
+        };
 
-        if piece.is_move_valid((square.x, square.y), &pieces_vec) {
+        if piece.can_reach_position((square.x, square.y), &pieces_query) {
             // Check if a piece of the opposite color exists in this square and despawn it
-            for (other_entity, other_piece) in pieces_entity_vec {
+            for (other_entity, other_piece) in pieces_entity_query.iter() {
                 if other_piece.x == square.x
                     && other_piece.y == square.y
                     && other_piece.color != piece.color
@@ -248,8 +266,13 @@ fn move_piece(
             }
 
             // Move piece
-            piece.x = square.x;
-            piece.y = square.y;
+            move_event.send(MoveEvent {
+                piece: selected_piece_entity,
+                end_position: (square.x, square.y),
+            });
+
+            // piece.x = square.x;
+            // piece.y = square.y;
 
             // Change turn
             turn.toggle();

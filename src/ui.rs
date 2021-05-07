@@ -1,9 +1,6 @@
 use crate::{board::*, pieces::*};
+use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy::{
-    diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
-    prelude::*,
-};
 // Component to mark the Text entity
 struct NextMoveText;
 

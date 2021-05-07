@@ -33,27 +33,64 @@ pub struct Piece {
 
 impl Piece {
     /// Returns the possible_positions that are available
-    pub fn is_move_valid(&self, new_position: (u8, u8), pieces: &Vec<Piece>) -> bool {
+    pub fn can_reach_position(&self, target_position: (u8, u8), pieces: &Query<&Piece>) -> bool {
         // If there's a piece of the same color in the same square, it can't move
-        if color_of_square(new_position, &pieces) == Some(self.color) {
+        if color_of_square(target_position, &pieces) == Some(self.color) {
             return false;
         }
 
         match self.piece_type {
-            PieceType::King => is_king_move_valid((self.x, self.y), new_position),
-            PieceType::Queen => is_queen_move_valid((self.x, self.y), new_position, pieces),
-            PieceType::Bishop => is_bishop_move_valid((self.x, self.y), new_position, pieces),
-            PieceType::Knight => is_knight_move_valid((self.x, self.y), new_position),
-            PieceType::Rook => is_rook_move_valid((self.x, self.y), new_position, pieces),
+            PieceType::King => is_king_move_valid((self.x, self.y), target_position),
+            PieceType::Queen => is_queen_move_valid((self.x, self.y), target_position, pieces),
+            PieceType::Bishop => is_bishop_move_valid((self.x, self.y), target_position, pieces),
+            PieceType::Knight => is_knight_move_valid((self.x, self.y), target_position),
+            PieceType::Rook => is_rook_move_valid((self.x, self.y), target_position, pieces),
             PieceType::Pawn => match self.color {
                 PieceColor::Black => {
-                    is_black_pawn_move_valid((self.x, self.y), new_position, pieces)
+                    is_black_pawn_move_valid((self.x, self.y), target_position, pieces)
                 }
                 PieceColor::White => {
-                    is_white_pawn_move_valid((self.x, self.y), new_position, pieces)
+                    is_white_pawn_move_valid((self.x, self.y), target_position, pieces)
                 }
             },
         }
+    }
+
+    pub fn is_move_valid(
+        &self,
+        target_position: (u8, u8),
+        pieces: &Query<&Piece>,
+        is_check: bool,
+    ) -> bool {
+        // can the piece reach the position?
+        if !self.can_reach_position(target_position, pieces) {
+            return false;
+        }
+
+        // if there is check, does this move resolve it?
+        if is_check {
+            // get new set of pieces
+            let pieces_copy: Vec<Piece> = pieces.iter().cloned().collect();
+            let mut filtered: Vec<Piece> = pieces_copy
+                .into_iter()
+                .filter(|piece| !(piece.x == self.x && piece.y == self.y))
+                .collect();
+
+            filtered.push(Piece {
+                x: target_position.0,
+                y: target_position.1,
+                ..*self
+            });
+
+            // check for check
+            // if can_any_piece_reach_king(king, &filtered) {
+            //     return false;
+            // }
+        }
+
+        // does this move create check against own king?
+
+        true
     }
 }
 pub struct PiecesPlugin;
@@ -221,8 +258,8 @@ fn move_pieces(time: Res<Time>, mut query: Query<(&mut Transform, &Piece)>) {
 }
 
 /// Returns None if square is empty, returns a Some with the color if not
-pub fn color_of_square(pos: (u8, u8), pieces: &Vec<Piece>) -> Option<PieceColor> {
-    for piece in pieces {
+pub fn color_of_square(pos: (u8, u8), pieces: &Query<&Piece>) -> Option<PieceColor> {
+    for piece in pieces.iter() {
         if piece.x == pos.0 && piece.y == pos.1 {
             return Some(piece.color);
         }
@@ -230,10 +267,10 @@ pub fn color_of_square(pos: (u8, u8), pieces: &Vec<Piece>) -> Option<PieceColor>
     None
 }
 
-pub fn is_path_empty(begin: (u8, u8), end: (u8, u8), pieces: &Vec<Piece>) -> bool {
+pub fn is_path_empty(begin: (u8, u8), end: (u8, u8), pieces: &Query<&Piece>) -> bool {
     // Same column
     if begin.0 == end.0 {
-        for piece in pieces {
+        for piece in pieces.iter() {
             if piece.x == begin.0
                 && ((piece.y > begin.1 && piece.y < end.1)
                     || (piece.y > end.1 && piece.y < begin.1))
@@ -244,7 +281,7 @@ pub fn is_path_empty(begin: (u8, u8), end: (u8, u8), pieces: &Vec<Piece>) -> boo
     }
     // Same row
     if begin.1 == end.1 {
-        for piece in pieces {
+        for piece in pieces.iter() {
             if piece.y == begin.1
                 && ((piece.x > begin.0 && piece.x < end.0)
                     || (piece.x > end.0 && piece.x < begin.0))
@@ -281,4 +318,11 @@ pub fn is_path_empty(begin: (u8, u8), end: (u8, u8), pieces: &Vec<Piece>) -> boo
     }
 
     true
+}
+
+pub fn can_any_piece_reach_king(king: &Piece, pieces: &Query<&Piece>) -> bool {
+    pieces
+        .iter()
+        .find(|piece| piece.can_reach_position((king.x, king.y), pieces))
+        .is_some()
 }

@@ -43,7 +43,7 @@ pub fn spawn_queen(
 pub fn is_queen_move_valid(
     current_position: (u8, u8),
     target_position: (u8, u8),
-    pieces: &Vec<Piece>,
+    pieces: &Query<&Piece>,
 ) -> bool {
     let (current_x, current_y) = current_position;
     let (target_x, target_y) = target_position;
